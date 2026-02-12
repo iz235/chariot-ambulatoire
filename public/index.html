@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Chariot Ambulatoire - Prototype</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 0;
+    }
+
+    .app {
+      max-width: 1000px;
+      margin: 30px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+      padding: 24px 28px 32px;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #123b6b;
+    }
+
+    .row {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      flex: 1;
+      min-width: 260px;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px 18px;
+      border: 1px solid #e1e7f0;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #123b6b;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #c7d2e3;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      margin-top: 8px;
+      border-radius: 999px;
+      border: none;
+      background: #204f9b;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.1s ease;
+    }
+
+    .btn.secondary {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #d1d5db;
+      margin-left: 8px;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .field-row .field {
+      flex: 1;
+    }
+
+    .value-box {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #dde3ee;
+      background: #ffffff;
+      min-height: 34px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #065f46;
+      background: #ecfdf5;
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: none;
+    }
+
+    .status.error {
+      color: #b91c1c;
+      background: #fef2f2;
+    }
+
+    small {
+      font-size: 11px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- Connexion Infirmier(ère) -->
+    <div class="card" style="max-width:400px;margin:0 auto 24px auto;">
+      <h2>Connexion Infirmier(ère)</h2>
+      <div id="loginForm">
+        <label for="nurseLoginId">ID Infirmier(ère)</label>
+        <input id="nurseLoginId" type="text" placeholder="Ex : INF007" style="margin-bottom:8px;" />
+
+        <label for="nursePassword">Mot de passe</label>
+        <input id="nursePassword" type="password" placeholder="Mot de passe" style="margin-bottom:8px;" />
+
+        <button class="btn" onclick="loginNurse()">Se connecter</button>
+      </div>
+      <div id="loginStatus" class="status"></div>
+      <div id="nurseInfo" style="margin-top:10px;display:none;">
+        <b>Connecté :</b> <span id="nurseFullName"></span> (<span id="nurseId"></span>)
+        <button class="btn secondary" style="margin-left:10px;" onclick="logoutNurse()">Déconnexion</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Contenu application (caché tant que non connecté) -->
+  <div id="appContent" style="display:none;">
+    <h1>Chariot ambulatoire – Prototype de scan</h1>
+    <p><small>Simulation de l'écran embarqué : scan de bracelet patient, consultation des informations et enregistrement
+        d'une administration.</small></p>
+
+    <div class="row">
+      <!-- Bloc Scan -->
+      <div class="card">
+        <h2>Scan bracelet / ID patient</h2>
+        <label for="hospitalId">ID hospitalier / Code barre</label>
+        <input id="hospitalId" type="text" placeholder="Ex : H00123" onkeypress="handleScanInput(event)" />
+
+        <button class="btn" onclick="scanPatient()">🔍 Scanner / Rechercher</button>
+        <button class="btn secondary" onclick="clearPatient()">Effacer</button>
+
+        <div id="scanStatus" class="status"></div>
+      </div>
+
+      <!-- Bloc informations patient -->
+      <div class="card">
+        <h2>Informations patient</h2>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Nom</label>
+            <div id="patientName" class="value-box"></div>
+          </div>
+          <div class="field">
+            <label>Date de naissance</label>
+            <div id="patientBirth" class="value-box"></div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Sexe</label>
+            <div id="patientSex" class="value-box"></div>
+          </div>
+          <div class="field">
+            <label>Chambre</label>
+            <div id="patientRoom" class="value-box"></div>
+          </div>
+        </div>
+
+        <div class="status" id="patientStatus"></div>
+
+        <div id="patientActions" style="margin-top:15px; display:none;">
+          <button class="btn secondary" onclick="printPatientBracelet()">🖨️ Imprimer Bracelet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historique Patient -->
+    <div class="row" id="patientHistorySection" style="display:none;">
+      <div class="card">
+        <h2>Historique des soins du patient</h2>
+        <div id="patientHistoryList">
+          <p>Chargement...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloc administration -->
+    <div class="row">
+      <div class="card">
+        <h2>Administration de médicament (démo)</h2>
+        <p style="font-size:13px; color:#4b5563;">
+          Cette section simule l'enregistrement d'une administration liée au patient scanné.
+        </p>
+
+        <label for="dose">Dose administrée</label>
+        <input id="dose" type="text" value="1g Paracétamol" />
+
+        <label for="nurse">ID Infirmier(ère)</label>
+        <input id="nurse" type="text" value="INF007" />
+
+        <button class="btn" onclick="registerAdministration()">💊 Enregistrer administration</button>
+
+        <div id="adminStatus" class="status"></div>
+      </div>
+    </div>
+    <!-- Bloc historique -->
+    <div class="row" id="historySection" style="display:none;">
+      <div class="card">
+        <h2>Historique de mes administrations</h2>
+        <div id="historyList">
+          <p>Chargement...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détails Administration -->
+  <div id="detailsModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+    <div
+      style="background:white; padding:24px; border-radius:12px; max-width:500px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+      <h2 style="margin-top:0; color:#123b6b;">Détails Administration</h2>
+      <div style="margin:16px 0; font-size:14px; line-height:1.6;">
+        <p><strong>Date/Heure :</strong> <span id="detailTime"></span></p>
+        <p><strong>Patient :</strong> <span id="detailPatient"></span></p>
+        <p><strong>Infirmier(ère) :</strong> <span id="detailNurse"></span></p>
+        <hr style="border:0; border-top:1px solid #eee; margin:12px 0;">
+        <p><strong>Médicament / Acte :</strong> <span id="detailMed"></span></p>
+        <p><strong>Dose Administrée :</strong> <span id="detailDose" style="font-weight:bold; color:#065f46;"></span>
+        </p>
+        <p><strong>Commentaire :</strong> <span id="detailComment"></span></p>
+        <p><strong>Statut :</strong> <span id="detailStatus"></span></p>
+      </div>
+      <div style="text-align:right;">
+        <button class="btn" onclick="closeDetails()">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <script>
+    let currentPatientId = null;
+    let currentHospitalId = null;
+    let currentNurse = null;
+
+    function handleScanInput(event) {
+      if (event.key === 'Enter') {
+        scanPatient();
+      }
+    }
+
+    // Au chargement de la page, on vérifie si une session existe
+    window.onload = function () {
+      const storedNurse = localStorage.getItem('nurse');
+      if (storedNurse) {
+        try {
+          currentNurse = JSON.parse(storedNurse);
+          showNurseInfo(currentNurse);
+          loadNurseHistory(currentNurse.nurse_id);
+        } catch (e) {
+          console.error("Erreur lecture session", e);
+          localStorage.removeItem('nurse');
+        }
+      }
+    };
+
+    function showNurseInfo(nurse) {
+      document.getElementById("nurseFullName").textContent = nurse.first_name + " " + nurse.last_name;
+      document.getElementById("nurseId").textContent = nurse.nurse_id;
+      document.getElementById("nurseInfo").style.display = "block";
+      document.getElementById("loginForm").style.display = "none";
+
+      // Afficher le contenu de l'application
+      document.getElementById("appContent").style.display = "block";
+      document.getElementById("historySection").style.display = "flex";
+    }
+
+    // Connexion infirmier(ère)
+    async function loginNurse() {
+      const nurseId = document.getElementById("nurseLoginId").value.trim();
+      const password = document.getElementById("nursePassword").value.trim();
+
+      if (!nurseId || !password) {
+        showStatus("loginStatus", "Veuillez saisir ID et mot de passe.", true);
+        return;
+      }
+
+      showStatus("loginStatus", "Connexion en cours...");
+      try {
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nurse_id: nurseId, password: password })
+        });
+        if (!res.ok) {
+          showStatus("loginStatus", "Identifiants incorrects.", true);
+          return;
+        }
+        const data = await res.json();
+        currentNurse = data;
+
+        // Sauvegarde session
+        localStorage.setItem('nurse', JSON.stringify(data));
+
+        showNurseInfo(data);
+        showStatus("loginStatus", "Connexion réussie.");
+
+        // Charger l'historique
+        loadNurseHistory(data.nurse_id);
+
+      } catch (err) {
+        console.error(err);
+        showStatus("loginStatus", "Erreur de connexion.", true);
+      }
+    }
+
+    function logoutNurse() {
+      currentNurse = null;
+      localStorage.removeItem('nurse');
+
+      document.getElementById("nurseInfo").style.display = "none";
+      document.getElementById("loginForm").style.display = "block";
+
+      // Cacher le contenu de l'application
+      document.getElementById("appContent").style.display = "none";
+      document.getElementById("historySection").style.display = "none";
+      document.getElementById("nurseLoginId").value = "";
+      document.getElementById("nursePassword").value = "";
+      showStatus("loginStatus", "Déconnecté.");
+    }
+
+    async function loadNurseHistory(nurseId) {
+      const historyContainer = document.getElementById("historyList");
+      historyContainer.innerHTML = "<p>Chargement...</p>";
+
+      try {
+        const res = await fetch(`/historique/infirmier/${nurseId}`);
+        if (!res.ok) throw new Error("Erreur fetch historique");
+
+        const history = await res.json();
+        if (history.length === 0) {
+          historyContainer.innerHTML = "<p>Aucune administration récente.</p>";
+          return;
+        }
+
+        let html = '<table style="width:100%; border-collapse: collapse; font-size:14px;">';
+        html += '<tr style="background:#f1f5f9; text-align:left;">';
+        html += '<th style="padding:8px;">Heure</th>';
+        html += '<th style="padding:8px;">Patient</th>';
+        html += '<th style="padding:8px;">Acte / Médicament</th>';
+        html += '<th style="padding:8px;">Status</th>';
+        html += '</tr>';
+
+        history.forEach(item => {
+          const dateObj = new Date(item.admin_time);
+          const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const patientName = (item.patient_last_name || "") + " " + (item.patient_first_name || "");
+          // Afficher le médicament. Si pas de médicament lié, afficher "Administration"
+          let drug = item.medication_label ? item.medication_label : "Administration";
+          // Ajouter la dose administrée si disponible
+          if (item.administered_dose) {
+            drug += ` (${item.administered_dose})`;
+          } else if (item.dosage) {
+            drug += ` (Prescrit: ${item.dosage})`;
+          }
+
+          html += `<tr style="border-bottom: 1px solid #e2e8f0; cursor:pointer;" onclick="openDetails(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+            <td style="padding:8px;">${timeStr}</td>
+            <td style="padding:8px;">${patientName}</td>
+            <td style="padding:8px;">${drug}</td>
+            <td style="padding:8px;">${item.status}</td>
+          </tr>`;
+        });
+        html += '</table>';
+        historyContainer.innerHTML = html;
+
+      } catch (err) {
+        console.error("Erreur historique", err);
+        historyContainer.innerHTML = "<p style='color:red'>Erreur chargement historique.</p>";
+      }
+    }
+
+    function showStatus(id, message, isError = false) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = message;
+      el.classList.toggle("error", isError);
+      el.style.display = message ? "block" : "none";
+    }
+
+    function clearPatient() {
+      currentPatientId = null;
+      currentHospitalId = null;
+      document.getElementById("hospitalId").value = "";
+      document.getElementById("patientName").textContent = "";
+      document.getElementById("patientBirth").textContent = "";
+      document.getElementById("patientSex").textContent = "";
+      document.getElementById("patientRoom").textContent = "";
+      document.getElementById("patientHistorySection").style.display = "none";
+      document.getElementById("patientActions").style.display = "none";
+      showStatus("scanStatus", "");
+      showStatus("patientStatus", "");
+      showStatus("adminStatus", "");
+    }
+
+    function printPatientBracelet() {
+      if (currentHospitalId) {
+        window.open(`/bracelets.html?id=${currentHospitalId}`, '_blank');
+      }
+    }
+
+    async function scanPatient() {
+      const hospitalId = document.getElementById("hospitalId").value.trim();
+      if (!hospitalId) {
+        showStatus("scanStatus", "Veuillez saisir un ID hospitalier.", true);
+        return;
+      }
+
+      try {
+        showStatus("scanStatus", "Scan en cours...", false);
+
+        const res = await fetch(`/patients/${encodeURIComponent(hospitalId)}`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            showStatus("scanStatus", "Patient introuvable pour cet ID.", true);
+          } else {
+            showStatus("scanStatus", "Erreur lors de la récupération du patient.", true);
+          }
+          return;
+        }
+
+        const patient = await res.json();
+        currentPatientId = patient.id;
+        currentHospitalId = patient.hospital_id;
+
+        document.getElementById("patientName").textContent =
+          (patient.last_name || "") + " " + (patient.first_name || "");
+        document.getElementById("patientBirth").textContent = patient.birth_date || "";
+        document.getElementById("patientSex").textContent = patient.sex || "";
+        document.getElementById("patientRoom").textContent = patient.room_number || "";
+
+        showStatus("scanStatus", "Scan réussi ");
+        showStatus("patientStatus", "Patient chargé depuis la base locale.", false);
+
+        // Afficher le bouton d'impression
+        document.getElementById("patientActions").style.display = "block";
+
+        // Charger l'historique du patient
+        loadPatientHistory(patient.id);
+
+        // log du scan
+        await fetch("/logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            level: "INFO",
+            source: "UI",
+            message: "Scan bracelet patient",
+            details: `HospitalID=${hospitalId}`
+          })
+        });
+      } catch (err) {
+        console.error(err);
+        showStatus("scanStatus", "Erreur de communication avec l'API.", true);
+      }
+    }
+
+    async function loadPatientHistory(patientId) {
+      const container = document.getElementById("patientHistoryList");
+      document.getElementById("patientHistorySection").style.display = "flex";
+      container.innerHTML = "<p>Chargement...</p>";
+
+      try {
+        const res = await fetch(`/historique/patient/${patientId}`);
+        if (!res.ok) throw new Error("Erreur fetch historique patient");
+
+        const history = await res.json();
+        if (history.length === 0) {
+          container.innerHTML = "<p>Aucun soin récent trouvé.</p>";
+          return;
+        }
+
+        let html = '<table style="width:100%; border-collapse: collapse; font-size:14px;">';
+        html += '<tr style="background:#f1f5f9; text-align:left;">';
+        html += '<th style="padding:8px;">Date/Heure</th>';
+        html += '<th style="padding:8px;">Infirmier(ère)</th>';
+        html += '<th style="padding:8px;">Soi / Médicament</th>';
+        html += '<th style="padding:8px;">Dose</th>';
+        html += '</tr>';
+
+        history.forEach(item => {
+          const dateObj = new Date(item.admin_time);
+          const timeStr = dateObj.toLocaleString(); // Date + Heure
+          const nurseName = (item.nurse_last_name || "N/A");
+          const drug = item.medication_label ? item.medication_label : "Administration manuelle";
+          const dose = item.administered_dose || item.dosage || "-";
+
+          html += `<tr style="border-bottom: 1px solid #e2e8f0; cursor:pointer;" onclick="openDetails(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+            <td style="padding:8px;">${timeStr}</td>
+            <td style="padding:8px;">${nurseName}</td>
+            <td style="padding:8px;">${drug}</td>
+            <td style="padding:8px;">${dose}</td>
+          </tr>`;
+        });
+        html += '</table>';
+        container.innerHTML = html;
+      } catch (err) {
+        console.error("Erreur historique patient", err);
+        container.innerHTML = "<p style='color:red;'>Erreur chargement.</p>";
+      }
+    }
+
+    function openDetails(item) {
+      const dateObj = new Date(item.admin_time);
+      document.getElementById("detailTime").textContent = dateObj.toLocaleString();
+
+      const patientName = item.patient_last_name ? (item.patient_last_name + " " + item.patient_first_name) : "N/A";
+      document.getElementById("detailPatient").textContent = patientName;
+
+      const nurseName = item.nurse_last_name ? (item.nurse_last_name + " " + item.nurse_first_name) : (item.nurse_id || "N/A");
+      document.getElementById("detailNurse").textContent = nurseName;
+
+      const drug = item.medication_label ? item.medication_label : "Administration manuelle";
+      document.getElementById("detailMed").textContent = drug;
+
+      // Affichage dose
+      const dose = item.administered_dose || item.dosage || "-";
+      document.getElementById("detailDose").textContent = dose;
+
+      document.getElementById("detailComment").textContent = item.comment || "-";
+      document.getElementById("detailStatus").textContent = item.status || "Inconnu";
+
+      const modal = document.getElementById("detailsModal");
+      modal.style.display = "flex";
+    }
+
+    function closeDetails() {
+      document.getElementById("detailsModal").style.display = "none";
+    }
+
+    async function registerAdministration() {
+      if (!currentPatientId) {
+        showStatus("adminStatus", "Veuillez d'abord scanner un patient.", true);
+        return;
+      }
+
+      const dose = document.getElementById("dose").value.trim() || null;
+
+      // Utiliser TOUJOURS l'infirmier connecté s'il existe
+      let nurse = null;
+      if (currentNurse && currentNurse.nurse_id) {
+        nurse = currentNurse.nurse_id;
+      } else {
+        // Fallback: essayer de lire l'input #nurse (si pas connecté)
+        // Mais si on est en mode "Enforce Login", on est censé être connecté.
+        const nurseInput = document.getElementById("nurse");
+        if (nurseInput) nurse = nurseInput.value.trim();
+      }
+
+      if (!nurse) {
+        showStatus("adminStatus", "Erreur: Aucun infirmier identifié.", true);
+        return;
+      }
+
+      try {
+        showStatus("adminStatus", "Enregistrement en cours...", false);
+
+        const res = await fetch("/administrations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            patient_id: currentPatientId,
+            administered_dose: dose,
+            nurse_id: nurse,
+            status: "GIVEN",
+            comment: "Administration de démonstration via interface UI."
+          })
+        });
+
+        if (!res.ok) {
+          showStatus("adminStatus", "Erreur lors de l'enregistrement.", true);
+          return;
+        }
+
+        const data = await res.json();
+        showStatus(
+          "adminStatus",
+          `Administration enregistrée (id=${data.id}) `,
+          false
+        );
+
+        // Rafraîchir l'historique de l'infirmier connecté
+        if (currentNurse) {
+          loadNurseHistory(currentNurse.nurse_id);
+        }
+
+        // Rafraîchir l'historique du patient aussi
+        loadPatientHistory(currentPatientId);
+
+        // log de l'administration
+        await fetch("/logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            level: "INFO",
+            source: "UI",
+            message: "Administration médicament",
+            details: `patient_id=${currentPatientId}, dose=${dose}`
+          })
+        });
+      } catch (err) {
+        console.error(err);
+        showStatus("adminStatus", "Erreur de communication avec l'API.", true);
+      }
+    }
+  </script>
+</body>
+
+</html>

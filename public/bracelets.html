@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bracelets Patients - QR Codes</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: #204f9b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background: #1a3f7a;
+        }
+
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .bracelet-card {
+            background: white;
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            break-inside: avoid;
+            /* Pour l'impression */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .hospital-header {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .patient-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 5px 0;
+            text-align: center;
+        }
+
+        .patient-info {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .qr-code {
+            margin: 10px 0;
+        }
+
+        .patient-id {
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            background: #eee;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .controls {
+                display: none;
+            }
+
+            .grid {
+                display: block;
+            }
+
+            .bracelet-card {
+                border: 1px solid #000;
+                box-shadow: none;
+                margin: 10px;
+                display: inline-block;
+                vertical-align: top;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+
+<body>
+    <h1>Bracelets Patients</h1>
+    <div class="controls">
+        <button class="btn" onclick="window.print()">🖨️ Imprimer les bracelets</button>
+    </div>
+
+    <div class="grid" id="braceletGrid">
+        <p>Chargement des patients...</p>
+    </div>
+
+    <script>
+        async function loadPatients() {
+            const grid = document.getElementById("braceletGrid");
+            try {
+                const res = await fetch("/patients");
+                if (!res.ok) throw new Error("Erreur chargement");
+                let patients = await res.json();
+
+                // Filtrer si un ID est passé en paramètre
+                const urlParams = new URLSearchParams(window.location.search);
+                const filterId = urlParams.get('id');
+
+                if (filterId) {
+                    patients = patients.filter(p => p.hospital_id === filterId);
+                }
+
+                grid.innerHTML = "";
+
+                if (patients.length === 0) {
+                    grid.innerHTML = "<p>Aucun patient trouvé.</p>";
+                    return;
+                }
+
+                patients.forEach(p => {
+                    const card = document.createElement("div");
+                    card.className = "bracelet-card";
+
+                    // Nom complet
+                    const fullName = `${p.last_name} ${p.first_name}`;
+
+                    // Date naissance
+                    const birth = p.birth_date || "N/A";
+
+                    card.innerHTML = `
+            <div class="hospital-header">Hôpital Mespi</div>
+            <div class="patient-name">${fullName}</div>
+            <div class="patient-info">Né(e) le : ${birth} | Sexe : ${p.sex}</div>
+            <div id="qr-${p.hospital_id}" class="qr-code"></div>
+            <div class="patient-id">${p.hospital_id}</div>
+          `;
+
+                    grid.appendChild(card);
+
+                    // Générer QR Code
+                    new QRCode(document.getElementById(`qr-${p.hospital_id}`), {
+                        text: p.hospital_id,
+                        width: 128,
+                        height: 128
+                    });
+                });
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = "<p style='color:red'>Erreur lors du chargement des patients.</p>";
+            }
+        }
+
+        loadPatients();
+    </script>
+</body>
+
+</html>
