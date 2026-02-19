@@ -27,12 +27,35 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error("❌ Erreur connexion SQLite :", err.message);
   } else {
     console.log("✅ Connecté à SQLite :", dbPath);
+
+    // Création table logs connexion si inexistante
+    db.run(`CREATE TABLE IF NOT EXISTS connection_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nurse_id VARCHAR(50) NOT NULL,
+      login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
   }
 });
 
 // =========================
 // ROUTES API
 // =========================
+
+// ----------------------------
+// Historique des connexions d'un infirmier
+// ----------------------------
+app.get("/logs/connections/:nurse_id", (req, res) => {
+  const { nurse_id } = req.params;
+  const sql = `SELECT * FROM connection_logs WHERE nurse_id = ? ORDER BY login_time DESC LIMIT 50`;
+
+  db.all(sql, [nurse_id], (err, rows) => {
+    if (err) {
+      console.error("Erreur SQL logs connexion:", err.message);
+      return res.status(500).json({ error: "Erreur serveur" });
+    }
+    res.json(rows);
+  });
+});
 
 // ----------------------------
 // Historique des prescriptions reçues par un patient
@@ -112,6 +135,9 @@ app.post("/login", (req, res) => {
       return res.status(401).json({ error: "ID ou mot de passe incorrect" });
     }
 
+    // Enregistrement log connexion
+    db.run(`INSERT INTO connection_logs (nurse_id) VALUES (?)`, [row.nurse_id]);
+
     // Auth OK, renvoyer infos (sans le mot de passe)
     return res.json({
       nurse_id: row.nurse_id,
@@ -165,6 +191,40 @@ app.get("/patients", (req, res) => {
       return res.status(500).json({ error: "Erreur serveur" });
     }
     return res.json(rows);
+  });
+});
+
+// ----------------------------
+// Créer un nouveau patient (génération auto ID)
+// ----------------------------
+app.post("/patients", (req, res) => {
+  const { last_name, first_name, birth_date, sex } = req.body;
+
+  if (!last_name || !first_name || !birth_date || !sex) {
+    return res.status(400).json({ error: "Tous les champs sont obligatoires." });
+  }
+
+  // Générer un ID unique : H + timestamp (partiel) + random
+  // Ex: H + 260217 + 123 -> H260217123
+  // Plus simple : H + Date.now().toString().slice(-6)
+  const hospital_id = "H" + Date.now().toString().slice(-5) + Math.floor(Math.random() * 10);
+
+  const sql = `INSERT INTO patients (hospital_id, last_name, first_name, birth_date, sex) VALUES (?, ?, ?, ?, ?)`;
+
+  db.run(sql, [hospital_id, last_name, first_name, birth_date, sex], function (err) {
+    if (err) {
+      console.error("Erreur création patient:", err.message);
+      return res.status(500).json({ error: "Erreur lors de la création du patient." });
+    }
+    // Renvoyer le patient créé
+    res.json({
+      id: this.lastID,
+      hospital_id,
+      last_name,
+      first_name,
+      birth_date,
+      sex
+    });
   });
 });
 

@@ -5,651 +5,798 @@
   <meta charset="UTF-8" />
   <title>Chariot Ambulatoire - Prototype</title>
   <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-color: #f8fafc;
+      --text-color: #1e293b;
+      --sidebar-width: 260px;
+    }
+
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f7fb;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
       margin: 0;
       padding: 0;
-    }
-
-    .app {
-      max-width: 1000px;
-      margin: 30px auto;
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-      padding: 24px 28px 32px;
-    }
-
-    h1 {
-      margin-top: 0;
-      color: #123b6b;
-    }
-
-    .row {
+      height: 100vh;
       display: flex;
-      gap: 24px;
-      margin-top: 16px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    .card {
-      flex: 1;
-      min-width: 260px;
-      background: #f8fafc;
-      border-radius: 10px;
-      padding: 16px 18px;
-      border: 1px solid #e1e7f0;
+    /* --- VUE 1 : LOGIN --- */
+    #viewLogin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100%;
+      background: #f1f5f9;
+      /* Light grey background */
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2000;
     }
 
-    .card h2 {
-      margin-top: 0;
-      font-size: 18px;
-      color: #123b6b;
+    .login-card {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
     }
 
-    label {
-      font-size: 13px;
+    .login-logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    /* --- LAYOUT DASHBOARD --- */
+    #appLayout {
+      display: none;
+      /* Initially hidden */
+      height: 100vh;
+      width: 100%;
+      flex-direction: row;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      margin-bottom: 30px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-profile {
+      background: #eff6ff;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+
+    .user-name {
       font-weight: 600;
-      color: #444;
+      color: #1e40af;
       display: block;
       margin-bottom: 4px;
     }
 
-    input[type="text"] {
+    .user-role {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #64748b;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .nav-item.active {
+      background: #e0f2fe;
+      color: #0284c7;
+    }
+
+    .btn-logout {
+      margin-top: auto;
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .btn-logout:hover {
+      background: #fee2e2;
+    }
+
+    /* MAIN CONTENT */
+    .main-content {
+      flex: 1;
+      padding: 32px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* COMPOSANTS */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+    }
+
+    h1,
+    h2 {
+      margin-top: 0;
+      color: #1e293b;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    input,
+    select {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: 1px solid #c7d2e3;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      margin-bottom: 16px;
       font-size: 14px;
       box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
     .btn {
-      display: inline-block;
-      padding: 8px 16px;
-      margin-top: 8px;
-      border-radius: 999px;
-      border: none;
-      background: #204f9b;
+      background: var(--primary);
       color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
       font-weight: 600;
-      font-size: 14px;
       cursor: pointer;
-      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.1s ease;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
     }
 
     .btn.secondary {
-      background: #f3f4f6;
-      color: #111827;
-      border: 1px solid #d1d5db;
-      margin-left: 8px;
+      background: #f1f5f9;
+      color: #475569;
     }
 
-    .btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    .btn.secondary:hover {
+      background: #e2e8f0;
     }
 
-    .field-row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .field-row .field {
-      flex: 1;
-    }
-
-    .value-box {
+    .btn.full-width {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: 1px solid #dde3ee;
-      background: #ffffff;
-      min-height: 34px;
-      box-sizing: border-box;
-      font-size: 14px;
+    }
+
+    /* UTILS */
+    .hidden {
+      display: none !important;
     }
 
     .status {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #065f46;
-      background: #ecfdf5;
+      padding: 12px;
       border-radius: 8px;
-      padding: 6px 10px;
+      margin-top: 16px;
+      font-size: 14px;
       display: none;
+      text-align: center;
     }
 
     .status.error {
-      color: #b91c1c;
       background: #fef2f2;
+      color: #991b1b;
     }
 
-    small {
-      font-size: 11px;
-      color: #6b7280;
+    .status.success {
+      background: #f0fdf4;
+      color: #166534;
+    }
+
+    /* PATIENT VIEW specific */
+    .patient-header {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+    }
+
+    .patient-header h2 {
+      color: white;
+      margin: 0 0 16px 0;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .info-item label {
+      display: block;
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-item span {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .action-label {
+      font-weight: 600;
+      color: #334155;
+    }
+
+    /* MODALS */
+    .modal-overlay {
+      display: none;
+      /* Hidden by default */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #94a3b8;
+    }
+
+    .close-modal:hover {
+      color: #475569;
     }
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <!-- Connexion Infirmier(ère) -->
-    <div class="card" style="max-width:400px;margin:0 auto 24px auto;">
-      <h2>Connexion Infirmier(ère)</h2>
-      <div id="loginForm">
-        <label for="nurseLoginId">ID Infirmier(ère)</label>
-        <input id="nurseLoginId" type="text" placeholder="Ex : INF007" style="margin-bottom:8px;" />
 
-        <label for="nursePassword">Mot de passe</label>
-        <input id="nursePassword" type="password" placeholder="Mot de passe" style="margin-bottom:8px;" />
+  <!-- VUE LOGIN -->
+  <div id="viewLogin">
+    <div class="login-card">
+      <div class="login-logo">🏥</div>
+      <h2 style="margin-bottom: 4px;">Chariot Ambulatoire</h2>
+      <p style="color: #64748b; margin-bottom: 24px; font-size: 14px;">Connectez-vous pour commencer</p>
 
-        <button class="btn" onclick="loginNurse()">Se connecter</button>
+      <div id="loginInputs">
+        <input id="nurseLoginId" type="text" placeholder="Identifiant (ex: INF007)" />
+        <input id="nursePassword" type="password" placeholder="Mot de passe" />
+        <button class="btn full-width" onclick="app.login()">Se connecter</button>
       </div>
       <div id="loginStatus" class="status"></div>
-      <div id="nurseInfo" style="margin-top:10px;display:none;">
-        <b>Connecté :</b> <span id="nurseFullName"></span> (<span id="nurseId"></span>)
-        <button class="btn secondary" style="margin-left:10px;" onclick="logoutNurse()">Déconnexion</button>
-      </div>
     </div>
   </div>
-  </div>
 
-  <!-- Contenu application (caché tant que non connecté) -->
-  <div id="appContent" style="display:none;">
-    <h1>Chariot ambulatoire – Prototype de scan</h1>
-    <p><small>Simulation de l'écran embarqué : scan de bracelet patient, consultation des informations et enregistrement
-        d'une administration.</small></p>
-
-    <div class="row">
-      <!-- Bloc Scan -->
-      <div class="card">
-        <h2>Scan bracelet / ID patient</h2>
-        <label for="hospitalId">ID hospitalier / Code barre</label>
-        <input id="hospitalId" type="text" placeholder="Ex : H00123" onkeypress="handleScanInput(event)" />
-
-        <button class="btn" onclick="scanPatient()">🔍 Scanner / Rechercher</button>
-        <button class="btn secondary" onclick="clearPatient()">Effacer</button>
-
-        <div id="scanStatus" class="status"></div>
+  <!-- DASHBOARD LAYOUT -->
+  <div id="appLayout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <span>🩺 Mespi Care</span>
       </div>
 
-      <!-- Bloc informations patient -->
-      <div class="card">
-        <h2>Informations patient</h2>
+      <div class="user-profile">
+        <span class="user-name" id="displayNurseName">...</span>
+        <span class="user-role" id="displayNurseId">...</span>
+      </div>
 
-        <div class="field-row">
-          <div class="field">
-            <label>Nom</label>
-            <div id="patientName" class="value-box"></div>
+      <div class="nav-item active" onclick="app.nav('scan')" id="nav-scan">
+        <span>🔍 Accueil / Scan</span>
+      </div>
+      <div class="nav-item" onclick="app.nav('care')" id="nav-care">
+        <span>💊 Mes Soins</span>
+      </div>
+      <div class="nav-item" onclick="app.nav('connect')" id="nav-connect">
+        <span>🕒 Connexions</span>
+      </div>
+
+      <button class="nav-item btn-logout" onclick="app.logout()">
+        <span>🚪 Déconnexion</span>
+      </button>
+    </div>
+
+    <!-- MAIN AREA -->
+    <div class="main-content">
+
+      <!-- 1. SCAN VIEW -->
+      <div id="view-scan" class="view-section">
+        <h1>Identification Patient</h1>
+        <div class="card" style="max-width: 500px; margin: 40px auto; text-align: center; padding: 40px;">
+          <div style="font-size: 48px; margin-bottom: 16px;">📸</div>
+          <h2>Scanner un bracelet</h2>
+          <p style="color: #64748b; margin-bottom: 24px;">Utilisez la douchette ou saisissez l'ID manuel.</p>
+
+          <input id="scanInput" type="text" placeholder="Scanner ID hospitalier..."
+            style="font-size: 16px; padding: 16px; text-align: center;" onkeypress="if(event.key==='Enter') app.scan()"
+            autofocus />
+
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button class="btn" style="flex:1" onclick="app.scan()">Valider</button>
+            <button class="btn secondary" onclick="app.openModal('newPatient')">➕ Créer</button>
           </div>
-          <div class="field">
-            <label>Date de naissance</label>
-            <div id="patientBirth" class="value-box"></div>
+          <div id="scanStatus" class="status"></div>
+        </div>
+      </div>
+
+      <!-- 2. PATIENT DASHBOARD -->
+      <div id="view-patient" class="view-section hidden">
+        <button class="btn secondary" style="margin-bottom: 20px;" onclick="app.nav('scan')">← Retour au scan</button>
+
+        <div class="card patient-header">
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Patient</label>
+              <span id="p-name">...</span>
+            </div>
+            <div class="info-item">
+              <label>Né(e) le</label>
+              <span id="p-dob">...</span>
+            </div>
+            <div class="info-item">
+              <label>ID Hospitalier</label>
+              <span id="p-id">...</span>
+            </div>
           </div>
         </div>
 
-        <div class="field-row">
-          <div class="field">
-            <label>Sexe</label>
-            <div id="patientSex" class="value-box"></div>
+        <div class="actions-grid">
+          <div class="action-btn" onclick="app.showAction('admin')">
+            <div class="action-icon">💊</div>
+            <div class="action-label">Administrer</div>
           </div>
-          <div class="field">
-            <label>Chambre</label>
-            <div id="patientRoom" class="value-box"></div>
+          <div class="action-btn" onclick="app.showAction('history')">
+            <div class="action-icon">📜</div>
+            <div class="action-label">Historique</div>
+          </div>
+          <div class="action-btn" onclick="app.printBracelet()">
+            <div class="action-icon">🖨️</div>
+            <div class="action-label">Bracelet</div>
           </div>
         </div>
 
-        <div class="status" id="patientStatus"></div>
+        <!-- Sub-sections (Admin & History) -->
+        <div id="action-admin" class="card hidden" style="margin-top: 24px; border-left: 4px solid var(--primary);">
+          <h3>💊 Administration de Soin</h3>
+          <div style="display: flex; gap: 12px;">
+            <input id="adminDose" type="text" placeholder="Dose / Médicament (ex: 1g Paracétamol)"
+              style="margin:0; flex:1;" />
+            <button class="btn" onclick="app.submitAdmin()">Valider</button>
+          </div>
+        </div>
 
-        <div id="patientActions" style="margin-top:15px; display:none;">
-          <button class="btn secondary" onclick="printPatientBracelet()">🖨️ Imprimer Bracelet</button>
+        <div id="action-history" class="card hidden" style="margin-top: 24px;">
+          <h3>📜 Historique du dossier</h3>
+          <div id="patientHistoryList">Chargement...</div>
         </div>
       </div>
-    </div>
 
-    <!-- Historique Patient -->
-    <div class="row" id="patientHistorySection" style="display:none;">
-      <div class="card">
-        <h2>Historique des soins du patient</h2>
-        <div id="patientHistoryList">
-          <p>Chargement...</p>
+      <!-- 3. NURSE HISTORY -->
+      <div id="view-care" class="view-section hidden">
+        <h1>Historique de mes soins</h1>
+        <div class="card">
+          <div id="nurseHistoryList">Chargement...</div>
         </div>
       </div>
-    </div>
 
-    <!-- Bloc administration -->
-    <div class="row">
-      <div class="card">
-        <h2>Administration de médicament (démo)</h2>
-        <p style="font-size:13px; color:#4b5563;">
-          Cette section simule l'enregistrement d'une administration liée au patient scanné.
-        </p>
-
-        <label for="dose">Dose administrée</label>
-        <input id="dose" type="text" value="1g Paracétamol" />
-
-        <label for="nurse">ID Infirmier(ère)</label>
-        <input id="nurse" type="text" value="INF007" />
-
-        <button class="btn" onclick="registerAdministration()">💊 Enregistrer administration</button>
-
-        <div id="adminStatus" class="status"></div>
-      </div>
-    </div>
-    <!-- Bloc historique -->
-    <div class="row" id="historySection" style="display:none;">
-      <div class="card">
-        <h2>Historique de mes administrations</h2>
-        <div id="historyList">
-          <p>Chargement...</p>
+      <!-- 4. CONNECTIONS -->
+      <div id="view-connect" class="view-section hidden">
+        <h1>Mes Connexions</h1>
+        <div class="card">
+          <div id="connLogList">Chargement...</div>
         </div>
       </div>
+
     </div>
   </div>
 
-  <!-- Modal Détails Administration -->
-  <div id="detailsModal"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-    <div
-      style="background:white; padding:24px; border-radius:12px; max-width:500px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-      <h2 style="margin-top:0; color:#123b6b;">Détails Administration</h2>
-      <div style="margin:16px 0; font-size:14px; line-height:1.6;">
-        <p><strong>Date/Heure :</strong> <span id="detailTime"></span></p>
-        <p><strong>Patient :</strong> <span id="detailPatient"></span></p>
-        <p><strong>Infirmier(ère) :</strong> <span id="detailNurse"></span></p>
-        <hr style="border:0; border-top:1px solid #eee; margin:12px 0;">
-        <p><strong>Médicament / Acte :</strong> <span id="detailMed"></span></p>
-        <p><strong>Dose Administrée :</strong> <span id="detailDose" style="font-weight:bold; color:#065f46;"></span>
-        </p>
-        <p><strong>Commentaire :</strong> <span id="detailComment"></span></p>
-        <p><strong>Statut :</strong> <span id="detailStatus"></span></p>
-      </div>
-      <div style="text-align:right;">
-        <button class="btn" onclick="closeDetails()">Fermer</button>
-      </div>
+  <!-- MODAL: NEW PATIENT -->
+  <div id="modal-newPatient" class="modal-overlay">
+    <div class="modal-content">
+      <button class="close-modal" onclick="app.closeModal('newPatient')">×</button>
+      <h2>Nouveau Patient</h2>
+
+      <label>Nom</label>
+      <input type="text" id="np-last">
+
+      <label>Prénom</label>
+      <input type="text" id="np-first">
+
+      <label>Date de Naissance</label>
+      <input type="date" id="np-dob">
+
+      <label>Sexe</label>
+      <select id="np-sex">
+        <option value="M">Masculin</option>
+        <option value="F">Féminin</option>
+      </select>
+
+      <button class="btn full-width" onclick="app.createPatient()">Créer et Générer ID</button>
     </div>
   </div>
 
-  </div>
-
+  <!-- SCRIPT -->
   <script>
-    let currentPatientId = null;
-    let currentHospitalId = null;
-    let currentNurse = null;
+    const app = {
+      state: {
+        nurse: null,
+        patient: null,
+      },
 
-    function handleScanInput(event) {
-      if (event.key === 'Enter') {
-        scanPatient();
-      }
-    }
-
-    // Au chargement de la page, on vérifie si une session existe
-    window.onload = function () {
-      const storedNurse = localStorage.getItem('nurse');
-      if (storedNurse) {
-        try {
-          currentNurse = JSON.parse(storedNurse);
-          showNurseInfo(currentNurse);
-          loadNurseHistory(currentNurse.nurse_id);
-        } catch (e) {
-          console.error("Erreur lecture session", e);
-          localStorage.removeItem('nurse');
+      init: function () {
+        const stored = localStorage.getItem('mespi_nurse');
+        if (stored) {
+          try {
+            this.state.nurse = JSON.parse(stored);
+            this.restoreUI();
+          } catch (e) { this.logout(); }
         }
+      },
+
+      /* --- AUTH --- */
+      login: async function () {
+        const id = document.getElementById('nurseLoginId').value.trim();
+        const pwd = document.getElementById('nursePassword').value.trim();
+
+        if (!id || !pwd) return this.status('loginStatus', 'Champs requis', true);
+
+        this.status('loginStatus', 'Connexion...');
+        try {
+          const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nurse_id: id, password: pwd })
+          });
+
+          if (!res.ok) return this.status('loginStatus', 'Identifiants invalides', true);
+
+          const data = await res.json();
+          this.state.nurse = data;
+          localStorage.setItem('mespi_nurse', JSON.stringify(data));
+          this.restoreUI();
+
+        } catch (e) {
+          console.error(e);
+          this.status('loginStatus', 'Erreur serveur', true);
+        }
+      },
+
+      logout: function () {
+        this.state.nurse = null;
+        localStorage.removeItem('mespi_nurse');
+        document.getElementById('viewLogin').style.display = 'flex';
+        document.getElementById('appLayout').style.display = 'none';
+
+        // Reset inputs
+        document.getElementById('nurseLoginId').value = '';
+        document.getElementById('nursePassword').value = '';
+        this.status('loginStatus', '');
+      },
+
+      restoreUI: function () {
+        if (!this.state.nurse) return;
+
+        document.getElementById('viewLogin').style.display = 'none';
+        document.getElementById('appLayout').style.display = 'flex';
+
+        document.getElementById('displayNurseName').textContent =
+          `${this.state.nurse.first_name} ${this.state.nurse.last_name}`;
+        document.getElementById('displayNurseId').textContent = `ID: ${this.state.nurse.nurse_id}`;
+
+        this.nav('scan');
+      },
+
+      /* --- NAVIGATION --- */
+      nav: function (viewInfo) {
+        // Reset Menu Active
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const navEl = document.getElementById(`nav-${viewInfo}`);
+        if (navEl) navEl.classList.add('active');
+
+        // Hide All Views
+        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+
+        // Show Target
+        document.getElementById(`view-${viewInfo}`).classList.remove('hidden');
+
+        // Logic specific
+        if (viewInfo === 'scan') {
+          setTimeout(() => document.getElementById('scanInput').focus(), 100);
+          this.state.patient = null; // Clear patient context
+        } else if (viewInfo === 'care') {
+          this.loadNurseHistory();
+        } else if (viewInfo === 'connect') {
+          this.loadConnections();
+        }
+      },
+
+      /* --- PATIENT --- */
+      scan: async function () {
+        const input = document.getElementById('scanInput');
+        const id = input.value.trim();
+        if (!id) return this.status('scanStatus', 'Veuillez saisir un ID', true);
+
+        try {
+          const res = await fetch(`/patients/${encodeURIComponent(id)}`);
+          if (!res.ok) return this.status('scanStatus', 'Patient introuvable', true);
+
+          const p = await res.json();
+          this.state.patient = p;
+
+          // Populate View
+          document.getElementById('p-name').textContent = `${p.last_name} ${p.first_name}`;
+          document.getElementById('p-dob').textContent = p.birth_date;
+          document.getElementById('p-id').textContent = p.hospital_id;
+
+          // Switch View
+          document.getElementById('view-scan').classList.add('hidden');
+          document.getElementById('view-patient').classList.remove('hidden');
+
+          // Clear sub-sections
+          document.getElementById('action-admin').classList.add('hidden');
+          document.getElementById('action-history').classList.add('hidden');
+
+          input.value = '';
+          this.status('scanStatus', '');
+
+          this.log('SCAN', `Patient ${p.hospital_id}`);
+
+        } catch (e) {
+          this.status('scanStatus', 'Erreur scan', true);
+        }
+      },
+
+      createPatient: async function () {
+        const payload = {
+          last_name: document.getElementById('np-last').value,
+          first_name: document.getElementById('np-first').value,
+          birth_date: document.getElementById('np-dob').value,
+          sex: document.getElementById('np-sex').value
+        };
+
+        if (!payload.last_name || !payload.birth_date) return alert("Champs manquants");
+
+        try {
+          const res = await fetch('/patients', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const newP = await res.json();
+          this.closeModal('newPatient');
+          document.getElementById('scanInput').value = newP.hospital_id;
+          this.scan();
+          alert(`Patient créé: ${newP.hospital_id}`);
+        } catch (e) { alert("Erreur création"); }
+      },
+
+      /* --- ACTIONS --- */
+      showAction: function (action) {
+        document.getElementById('action-admin').classList.add('hidden');
+        document.getElementById('action-history').classList.add('hidden');
+
+        if (action === 'admin') {
+          document.getElementById('action-admin').classList.remove('hidden');
+          document.getElementById('adminDose').focus();
+        } else if (action === 'history') {
+          document.getElementById('action-history').classList.remove('hidden');
+          this.loadPatientHistory();
+        }
+      },
+
+      printBracelet: function () {
+        if (this.state.patient) {
+          window.open(`/bracelets.html?id=${this.state.patient.hospital_id}`, '_blank');
+        }
+      },
+
+      submitAdmin: async function () {
+        const dose = document.getElementById('adminDose').value.trim();
+        if (!dose) return alert("Veuillez saisir une dose/médicament");
+
+        try {
+          const res = await fetch('/administrations', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              patient_id: this.state.patient.id,
+              nurse_id: this.state.nurse.nurse_id,
+              administered_dose: dose,
+              status: "GIVEN",
+              comment: "Via UI Tablette"
+            })
+          });
+
+          if (res.ok) {
+            alert("Administration validée");
+            document.getElementById('adminDose').value = '';
+            document.getElementById('action-admin').classList.add('hidden');
+            this.log('ADMIN', `Dose: ${dose} to Patient ${this.state.patient.hospital_id}`);
+          }
+        } catch (e) { alert("Erreur"); }
+      },
+
+      /* --- DATA LOADING --- */
+      loadNurseHistory: async function () {
+        const div = document.getElementById('nurseHistoryList');
+        div.innerHTML = 'Chargement...';
+        const res = await fetch(`/historique/infirmier/${this.state.nurse.nurse_id}`);
+        const data = await res.json();
+
+        if (!data.length) { div.innerHTML = "Aucun historique."; return; }
+
+        div.innerHTML = data.map(d => `
+          <div style="padding: 12px; border-bottom: 1px solid #eee;">
+            <b>${new Date(d.admin_time).toLocaleTimeString()}</b> - 
+            ${d.patient_last_name} : ${d.medication_label || 'Soin'} (${d.administered_dose})
+          </div>
+        `).join('');
+      },
+
+      loadPatientHistory: async function () {
+        const div = document.getElementById('patientHistoryList');
+        div.innerHTML = 'Chargement...';
+        const res = await fetch(`/historique/patient/${this.state.patient.id}`);
+        const data = await res.json();
+
+        if (!data.length) { div.innerHTML = "Dossier vide."; return; }
+
+        div.innerHTML = data.map(d => `
+          <div style="padding: 12px; border-bottom: 1px solid #eee;">
+            <div style="font-size:12px; color:#64748b;">${new Date(d.admin_time).toLocaleString()}</div>
+            <b>${d.medication_label || 'Soin'}</b> 
+            <span>${d.administered_dose || ''}</span>
+            <div style="font-size:12px;">Par: ${d.nurse_last_name || d.nurse_id}</div>
+          </div>
+        `).join('');
+      },
+
+      loadConnections: async function () {
+        const div = document.getElementById('connLogList');
+        div.innerHTML = 'Chargement...';
+        try {
+          const res = await fetch(`/logs/connections/${this.state.nurse.nurse_id}`);
+          const data = await res.json();
+          if (!data.length) { div.innerHTML = "Aucune connexion."; return; }
+          div.innerHTML = data.map(d => `
+            <div style="padding: 12px; border-bottom: 1px solid #eee;">
+              ${new Date(d.login_time).toLocaleString()}
+            </div>
+          `).join('');
+        } catch (e) { div.innerHTML = "Erreur chargement logs."; }
+      },
+
+      /* --- UTILS --- */
+      status: function (id, msg, err = false) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.display = msg ? 'block' : 'none';
+        el.className = 'status ' + (err ? 'error' : 'success');
+      },
+
+      openModal: function (name) {
+        document.getElementById(`modal-${name}`).style.display = 'flex';
+      },
+
+      closeModal: function (name) {
+        document.getElementById(`modal-${name}`).style.display = 'none';
+      },
+
+      log: function (action, details) {
+        fetch('/logs', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ level: 'INFO', source: 'UI', message: action, details: details })
+        });
       }
     };
 
-    function showNurseInfo(nurse) {
-      document.getElementById("nurseFullName").textContent = nurse.first_name + " " + nurse.last_name;
-      document.getElementById("nurseId").textContent = nurse.nurse_id;
-      document.getElementById("nurseInfo").style.display = "block";
-      document.getElementById("loginForm").style.display = "none";
-
-      // Afficher le contenu de l'application
-      document.getElementById("appContent").style.display = "block";
-      document.getElementById("historySection").style.display = "flex";
-    }
-
-    // Connexion infirmier(ère)
-    async function loginNurse() {
-      const nurseId = document.getElementById("nurseLoginId").value.trim();
-      const password = document.getElementById("nursePassword").value.trim();
-
-      if (!nurseId || !password) {
-        showStatus("loginStatus", "Veuillez saisir ID et mot de passe.", true);
-        return;
-      }
-
-      showStatus("loginStatus", "Connexion en cours...");
-      try {
-        const res = await fetch("/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nurse_id: nurseId, password: password })
-        });
-        if (!res.ok) {
-          showStatus("loginStatus", "Identifiants incorrects.", true);
-          return;
-        }
-        const data = await res.json();
-        currentNurse = data;
-
-        // Sauvegarde session
-        localStorage.setItem('nurse', JSON.stringify(data));
-
-        showNurseInfo(data);
-        showStatus("loginStatus", "Connexion réussie.");
-
-        // Charger l'historique
-        loadNurseHistory(data.nurse_id);
-
-      } catch (err) {
-        console.error(err);
-        showStatus("loginStatus", "Erreur de connexion.", true);
-      }
-    }
-
-    function logoutNurse() {
-      currentNurse = null;
-      localStorage.removeItem('nurse');
-
-      document.getElementById("nurseInfo").style.display = "none";
-      document.getElementById("loginForm").style.display = "block";
-
-      // Cacher le contenu de l'application
-      document.getElementById("appContent").style.display = "none";
-      document.getElementById("historySection").style.display = "none";
-      document.getElementById("nurseLoginId").value = "";
-      document.getElementById("nursePassword").value = "";
-      showStatus("loginStatus", "Déconnecté.");
-    }
-
-    async function loadNurseHistory(nurseId) {
-      const historyContainer = document.getElementById("historyList");
-      historyContainer.innerHTML = "<p>Chargement...</p>";
-
-      try {
-        const res = await fetch(`/historique/infirmier/${nurseId}`);
-        if (!res.ok) throw new Error("Erreur fetch historique");
-
-        const history = await res.json();
-        if (history.length === 0) {
-          historyContainer.innerHTML = "<p>Aucune administration récente.</p>";
-          return;
-        }
-
-        let html = '<table style="width:100%; border-collapse: collapse; font-size:14px;">';
-        html += '<tr style="background:#f1f5f9; text-align:left;">';
-        html += '<th style="padding:8px;">Heure</th>';
-        html += '<th style="padding:8px;">Patient</th>';
-        html += '<th style="padding:8px;">Acte / Médicament</th>';
-        html += '<th style="padding:8px;">Status</th>';
-        html += '</tr>';
-
-        history.forEach(item => {
-          const dateObj = new Date(item.admin_time);
-          const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const patientName = (item.patient_last_name || "") + " " + (item.patient_first_name || "");
-          // Afficher le médicament. Si pas de médicament lié, afficher "Administration"
-          let drug = item.medication_label ? item.medication_label : "Administration";
-          // Ajouter la dose administrée si disponible
-          if (item.administered_dose) {
-            drug += ` (${item.administered_dose})`;
-          } else if (item.dosage) {
-            drug += ` (Prescrit: ${item.dosage})`;
-          }
-
-          html += `<tr style="border-bottom: 1px solid #e2e8f0; cursor:pointer;" onclick="openDetails(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-            <td style="padding:8px;">${timeStr}</td>
-            <td style="padding:8px;">${patientName}</td>
-            <td style="padding:8px;">${drug}</td>
-            <td style="padding:8px;">${item.status}</td>
-          </tr>`;
-        });
-        html += '</table>';
-        historyContainer.innerHTML = html;
-
-      } catch (err) {
-        console.error("Erreur historique", err);
-        historyContainer.innerHTML = "<p style='color:red'>Erreur chargement historique.</p>";
-      }
-    }
-
-    function showStatus(id, message, isError = false) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = message;
-      el.classList.toggle("error", isError);
-      el.style.display = message ? "block" : "none";
-    }
-
-    function clearPatient() {
-      currentPatientId = null;
-      currentHospitalId = null;
-      document.getElementById("hospitalId").value = "";
-      document.getElementById("patientName").textContent = "";
-      document.getElementById("patientBirth").textContent = "";
-      document.getElementById("patientSex").textContent = "";
-      document.getElementById("patientRoom").textContent = "";
-      document.getElementById("patientHistorySection").style.display = "none";
-      document.getElementById("patientActions").style.display = "none";
-      showStatus("scanStatus", "");
-      showStatus("patientStatus", "");
-      showStatus("adminStatus", "");
-    }
-
-    function printPatientBracelet() {
-      if (currentHospitalId) {
-        window.open(`/bracelets.html?id=${currentHospitalId}`, '_blank');
-      }
-    }
-
-    async function scanPatient() {
-      const hospitalId = document.getElementById("hospitalId").value.trim();
-      if (!hospitalId) {
-        showStatus("scanStatus", "Veuillez saisir un ID hospitalier.", true);
-        return;
-      }
-
-      try {
-        showStatus("scanStatus", "Scan en cours...", false);
-
-        const res = await fetch(`/patients/${encodeURIComponent(hospitalId)}`);
-        if (!res.ok) {
-          if (res.status === 404) {
-            showStatus("scanStatus", "Patient introuvable pour cet ID.", true);
-          } else {
-            showStatus("scanStatus", "Erreur lors de la récupération du patient.", true);
-          }
-          return;
-        }
-
-        const patient = await res.json();
-        currentPatientId = patient.id;
-        currentHospitalId = patient.hospital_id;
-
-        document.getElementById("patientName").textContent =
-          (patient.last_name || "") + " " + (patient.first_name || "");
-        document.getElementById("patientBirth").textContent = patient.birth_date || "";
-        document.getElementById("patientSex").textContent = patient.sex || "";
-        document.getElementById("patientRoom").textContent = patient.room_number || "";
-
-        showStatus("scanStatus", "Scan réussi ");
-        showStatus("patientStatus", "Patient chargé depuis la base locale.", false);
-
-        // Afficher le bouton d'impression
-        document.getElementById("patientActions").style.display = "block";
-
-        // Charger l'historique du patient
-        loadPatientHistory(patient.id);
-
-        // log du scan
-        await fetch("/logs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            level: "INFO",
-            source: "UI",
-            message: "Scan bracelet patient",
-            details: `HospitalID=${hospitalId}`
-          })
-        });
-      } catch (err) {
-        console.error(err);
-        showStatus("scanStatus", "Erreur de communication avec l'API.", true);
-      }
-    }
-
-    async function loadPatientHistory(patientId) {
-      const container = document.getElementById("patientHistoryList");
-      document.getElementById("patientHistorySection").style.display = "flex";
-      container.innerHTML = "<p>Chargement...</p>";
-
-      try {
-        const res = await fetch(`/historique/patient/${patientId}`);
-        if (!res.ok) throw new Error("Erreur fetch historique patient");
-
-        const history = await res.json();
-        if (history.length === 0) {
-          container.innerHTML = "<p>Aucun soin récent trouvé.</p>";
-          return;
-        }
-
-        let html = '<table style="width:100%; border-collapse: collapse; font-size:14px;">';
-        html += '<tr style="background:#f1f5f9; text-align:left;">';
-        html += '<th style="padding:8px;">Date/Heure</th>';
-        html += '<th style="padding:8px;">Infirmier(ère)</th>';
-        html += '<th style="padding:8px;">Soi / Médicament</th>';
-        html += '<th style="padding:8px;">Dose</th>';
-        html += '</tr>';
-
-        history.forEach(item => {
-          const dateObj = new Date(item.admin_time);
-          const timeStr = dateObj.toLocaleString(); // Date + Heure
-          const nurseName = (item.nurse_last_name || "N/A");
-          const drug = item.medication_label ? item.medication_label : "Administration manuelle";
-          const dose = item.administered_dose || item.dosage || "-";
-
-          html += `<tr style="border-bottom: 1px solid #e2e8f0; cursor:pointer;" onclick="openDetails(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-            <td style="padding:8px;">${timeStr}</td>
-            <td style="padding:8px;">${nurseName}</td>
-            <td style="padding:8px;">${drug}</td>
-            <td style="padding:8px;">${dose}</td>
-          </tr>`;
-        });
-        html += '</table>';
-        container.innerHTML = html;
-      } catch (err) {
-        console.error("Erreur historique patient", err);
-        container.innerHTML = "<p style='color:red;'>Erreur chargement.</p>";
-      }
-    }
-
-    function openDetails(item) {
-      const dateObj = new Date(item.admin_time);
-      document.getElementById("detailTime").textContent = dateObj.toLocaleString();
-
-      const patientName = item.patient_last_name ? (item.patient_last_name + " " + item.patient_first_name) : "N/A";
-      document.getElementById("detailPatient").textContent = patientName;
-
-      const nurseName = item.nurse_last_name ? (item.nurse_last_name + " " + item.nurse_first_name) : (item.nurse_id || "N/A");
-      document.getElementById("detailNurse").textContent = nurseName;
-
-      const drug = item.medication_label ? item.medication_label : "Administration manuelle";
-      document.getElementById("detailMed").textContent = drug;
-
-      // Affichage dose
-      const dose = item.administered_dose || item.dosage || "-";
-      document.getElementById("detailDose").textContent = dose;
-
-      document.getElementById("detailComment").textContent = item.comment || "-";
-      document.getElementById("detailStatus").textContent = item.status || "Inconnu";
-
-      const modal = document.getElementById("detailsModal");
-      modal.style.display = "flex";
-    }
-
-    function closeDetails() {
-      document.getElementById("detailsModal").style.display = "none";
-    }
-
-    async function registerAdministration() {
-      if (!currentPatientId) {
-        showStatus("adminStatus", "Veuillez d'abord scanner un patient.", true);
-        return;
-      }
-
-      const dose = document.getElementById("dose").value.trim() || null;
-
-      // Utiliser TOUJOURS l'infirmier connecté s'il existe
-      let nurse = null;
-      if (currentNurse && currentNurse.nurse_id) {
-        nurse = currentNurse.nurse_id;
-      } else {
-        // Fallback: essayer de lire l'input #nurse (si pas connecté)
-        // Mais si on est en mode "Enforce Login", on est censé être connecté.
-        const nurseInput = document.getElementById("nurse");
-        if (nurseInput) nurse = nurseInput.value.trim();
-      }
-
-      if (!nurse) {
-        showStatus("adminStatus", "Erreur: Aucun infirmier identifié.", true);
-        return;
-      }
-
-      try {
-        showStatus("adminStatus", "Enregistrement en cours...", false);
-
-        const res = await fetch("/administrations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            patient_id: currentPatientId,
-            administered_dose: dose,
-            nurse_id: nurse,
-            status: "GIVEN",
-            comment: "Administration de démonstration via interface UI."
-          })
-        });
-
-        if (!res.ok) {
-          showStatus("adminStatus", "Erreur lors de l'enregistrement.", true);
-          return;
-        }
-
-        const data = await res.json();
-        showStatus(
-          "adminStatus",
-          `Administration enregistrée (id=${data.id}) `,
-          false
-        );
-
-        // Rafraîchir l'historique de l'infirmier connecté
-        if (currentNurse) {
-          loadNurseHistory(currentNurse.nurse_id);
-        }
-
-        // Rafraîchir l'historique du patient aussi
-        loadPatientHistory(currentPatientId);
-
-        // log de l'administration
-        await fetch("/logs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            level: "INFO",
-            source: "UI",
-            message: "Administration médicament",
-            details: `patient_id=${currentPatientId}, dose=${dose}`
-          })
-        });
-      } catch (err) {
-        console.error(err);
-        showStatus("adminStatus", "Erreur de communication avec l'API.", true);
-      }
-    }
+    // Init App
+    window.onload = () => app.init();
   </script>
 </body>
 
