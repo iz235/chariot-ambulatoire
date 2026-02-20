@@ -26,32 +26,111 @@ const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("❌ Erreur connexion SQLite :", err.message);
   } else {
-    // Création table vitals si inexistante
-    db.run(`
-    CREATE TABLE IF NOT EXISTS vitals (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        patient_id      INTEGER NOT NULL,
-        nurse_id        VARCHAR(50),
-        temperature     REAL,
-        systolic        INTEGER,
-        diastolic       INTEGER,
-        pulse           INTEGER,
-        spo2            INTEGER,
-        taken_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
-    )
-  `);
-
     console.log("✅ Connecté à SQLite :", dbPath);
-
-    // Création table logs connexion si inexistante
-    db.run(`CREATE TABLE IF NOT EXISTS connection_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nurse_id VARCHAR(50) NOT NULL,
-      login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`);
+    initDatabase();
   }
 });
+
+function initDatabase() {
+  db.serialize(() => {
+    // Patients
+    db.run(`CREATE TABLE IF NOT EXISTS patients (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      hospital_id VARCHAR(50) UNIQUE NOT NULL,
+      last_name   VARCHAR(100) NOT NULL,
+      first_name  VARCHAR(100) NOT NULL,
+      birth_date  DATE NOT NULL,
+      sex         VARCHAR(10),
+      room_number VARCHAR(20),
+      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Infirmiers
+    db.run(`CREATE TABLE IF NOT EXISTS infirmiers (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      nurse_id   VARCHAR(50) UNIQUE NOT NULL,
+      last_name  VARCHAR(100) NOT NULL,
+      first_name VARCHAR(100) NOT NULL,
+      password   VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Prescriptions
+    db.run(`CREATE TABLE IF NOT EXISTS prescriptions (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id       INTEGER NOT NULL,
+      medication_code  VARCHAR(100) NOT NULL,
+      medication_label VARCHAR(255),
+      dosage           VARCHAR(100),
+      route            VARCHAR(50),
+      frequency        VARCHAR(100),
+      start_date       DATETIME NOT NULL,
+      end_date         DATETIME,
+      status           VARCHAR(20) DEFAULT 'ACTIVE',
+      created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    )`);
+
+    // Administrations
+    db.run(`CREATE TABLE IF NOT EXISTS administrations (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id        INTEGER NOT NULL,
+      prescription_id   INTEGER,
+      admin_time        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      administered_dose VARCHAR(100),
+      nurse_id          VARCHAR(50),
+      status            VARCHAR(20) DEFAULT 'GIVEN',
+      comment           TEXT,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+      FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE SET NULL
+    )`);
+
+    // Logs
+    db.run(`CREATE TABLE IF NOT EXISTS logs (
+      id       INTEGER PRIMARY KEY AUTOINCREMENT,
+      log_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      level    VARCHAR(10) NOT NULL,
+      source   VARCHAR(50),
+      message  TEXT NOT NULL,
+      details  TEXT
+    )`);
+
+    // Vitals
+    db.run(`CREATE TABLE IF NOT EXISTS vitals (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id  INTEGER NOT NULL,
+      nurse_id    VARCHAR(50),
+      temperature REAL,
+      systolic    INTEGER,
+      diastolic   INTEGER,
+      pulse       INTEGER,
+      spo2        INTEGER,
+      taken_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    )`);
+
+    // Connection logs
+    db.run(`CREATE TABLE IF NOT EXISTS connection_logs (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      nurse_id   VARCHAR(50) NOT NULL,
+      login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Données de démo (ne s'insèrent que si absentes)
+    db.run(`INSERT OR IGNORE INTO infirmiers (nurse_id, last_name, first_name, password)
+            VALUES ('INF007', 'Bond', 'James', '007')`);
+    db.run(`INSERT OR IGNORE INTO patients (hospital_id, last_name, first_name, birth_date, sex, room_number)
+            VALUES ('H00123', 'DUPONT', 'Jean', '1980-01-15', 'M', '101A')`);
+    db.run(`INSERT OR IGNORE INTO patients (hospital_id, last_name, first_name, birth_date, sex, room_number)
+            VALUES ('H00124', 'MARTIN', 'Claire', '1975-06-02', 'F', '102B')`);
+
+    console.log("✅ Tables initialisées (CREATE IF NOT EXISTS)");
+  });
+}
 
 // =========================
 // ROUTES API
