@@ -163,6 +163,50 @@ app.post("/login", (req, res) => {
   });
 });
 
+// ----------------------------
+// ADMIN - Clé secrète
+// ----------------------------
+const ADMIN_KEY = "mespi-admin-2025";
+
+// GET /admin/nurses — Liste tous les infirmiers
+app.get("/admin/nurses", (req, res) => {
+  if (req.headers['x-admin-key'] !== ADMIN_KEY) return res.status(403).json({ error: "Accès refusé" });
+  db.all("SELECT nurse_id, last_name, first_name, created_at FROM infirmiers ORDER BY created_at DESC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// POST /admin/nurses — Créer un infirmier
+app.post("/admin/nurses", (req, res) => {
+  if (req.headers['x-admin-key'] !== ADMIN_KEY) return res.status(403).json({ error: "Accès refusé" });
+  const { nurse_id, last_name, first_name, password } = req.body;
+  if (!nurse_id || !last_name || !first_name || !password)
+    return res.status(400).json({ error: "Tous les champs sont obligatoires" });
+
+  db.run(
+    "INSERT INTO infirmiers (nurse_id, last_name, first_name, password) VALUES (?, ?, ?, ?)",
+    [nurse_id.toUpperCase(), last_name, first_name, password],
+    function (err) {
+      if (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: "Cet ID existe déjà" });
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: "Infirmier créé", nurse_id: nurse_id.toUpperCase() });
+    }
+  );
+});
+
+// DELETE /admin/nurses/:id — Supprimer un infirmier
+app.delete("/admin/nurses/:nurse_id", (req, res) => {
+  if (req.headers['x-admin-key'] !== ADMIN_KEY) return res.status(403).json({ error: "Accès refusé" });
+  db.run("DELETE FROM infirmiers WHERE nurse_id = ?", [req.params.nurse_id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: "Infirmier non trouvé" });
+    res.json({ message: "Infirmier supprimé" });
+  });
+});
+
 // ➤ Route test backend (JSON)
 app.get("/", (req, res) => {
   res.json({ message: "API MESPI Chariot ambulatoire opérationnelle v2 🏥🚗" });
