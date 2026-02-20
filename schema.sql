@@ -101,6 +101,26 @@ CREATE INDEX IF NOT EXISTS idx_logs_source ON logs(source);
 
 
 -- ==========================
+-- TABLE : vitals (CONSTANTES)
+-- ==========================
+CREATE TABLE IF NOT EXISTS vitals (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id      INTEGER NOT NULL,
+    nurse_id        VARCHAR(50),
+    temperature     REAL,       -- ex: 37.5
+    systolic        INTEGER,    -- ex: 120 (mmHg)
+    diastolic       INTEGER,    -- ex: 80 (mmHg)
+    pulse           INTEGER,    -- ex: 70 (bpm)
+    spo2            INTEGER,    -- ex: 98 (%)
+    taken_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_vitals_patient_id ON vitals(patient_id);
+
+
+-- ==========================
 -- TABLE : infirmiers
 -- ==========================
 CREATE TABLE IF NOT EXISTS infirmiers (

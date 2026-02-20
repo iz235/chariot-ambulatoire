@@ -26,6 +26,22 @@ const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("❌ Erreur connexion SQLite :", err.message);
   } else {
+    // Création table vitals si inexistante
+    db.run(`
+    CREATE TABLE IF NOT EXISTS vitals (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id      INTEGER NOT NULL,
+        nurse_id        VARCHAR(50),
+        temperature     REAL,
+        systolic        INTEGER,
+        diastolic       INTEGER,
+        pulse           INTEGER,
+        spo2            INTEGER,
+        taken_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    )
+  `);
+
     console.log("✅ Connecté à SQLite :", dbPath);
 
     // Création table logs connexion si inexistante
@@ -299,6 +315,81 @@ app.get("/administrations/patient/:id", (req, res) => {
 });
 
 // ----------------------------
+// CLINICAL RULE ENGINE
+// ----------------------------
+function analyzeVitals({ temperature, systolic, diastolic, pulse, spo2 }) {
+  const alerts = [];
+
+  // Temperature
+  const temp = parseFloat(temperature);
+  if (!isNaN(temp)) {
+    if (temp >= 40.0) alerts.push({ level: 'critical', code: 'HYPERTHERMIA', label: 'Hyperthermie sévère', detail: `Température: ${temp}°C`, suggestion: 'Refroidissement urgent + Antipyrétique IV' });
+    else if (temp >= 38.5) alerts.push({ level: 'warning', code: 'FEVER', label: 'Fièvre', detail: `Température: ${temp}°C`, suggestion: 'Administrer Antipyrétique (Paracétamol 1g)' });
+    else if (temp < 36.0) alerts.push({ level: 'warning', code: 'HYPOTHERMIA', label: 'Hypothermie', detail: `Température: ${temp}°C`, suggestion: 'Réchauffement, surveiller' });
+  }
+
+  // Blood pressure
+  const sys = parseInt(systolic);
+  const dia = parseInt(diastolic);
+  if (!isNaN(sys)) {
+    if (sys >= 180) alerts.push({ level: 'critical', code: 'HYPERTENSION_C', label: 'Hypertension critique', detail: `TA: ${sys}/${dia} mmHg`, suggestion: 'Contacter médecin immédiatement' });
+    else if (sys >= 140) alerts.push({ level: 'warning', code: 'HYPERTENSION', label: 'Hypertension', detail: `TA: ${sys}/${dia} mmHg`, suggestion: 'Surveiller, noter dans le dossier' });
+    else if (sys < 90) alerts.push({ level: 'critical', code: 'HYPOTENSION', label: 'Hypotension', detail: `TA: ${sys}/${dia} mmHg`, suggestion: 'Position allongée, appeler médecin' });
+  }
+
+  // Pulse
+  const hr = parseInt(pulse);
+  if (!isNaN(hr)) {
+    if (hr > 120) alerts.push({ level: 'warning', code: 'TACHYCARDIA', label: 'Tachycardie', detail: `Pouls: ${hr} bpm`, suggestion: 'Surveiller, vérifier causes' });
+    else if (hr < 50) alerts.push({ level: 'warning', code: 'BRADYCARDIA', label: 'Bradycardie', detail: `Pouls: ${hr} bpm`, suggestion: 'ECG recommandé, alerter médecin' });
+  }
+
+  // SpO2
+  const o2 = parseInt(spo2);
+  if (!isNaN(o2)) {
+    if (o2 < 90) alerts.push({ level: 'critical', code: 'HYPOXIA_C', label: 'Hypoxie sévère', detail: `SpO2: ${o2}%`, suggestion: 'Oxygène urgent, appeler médecin' });
+    else if (o2 < 95) alerts.push({ level: 'warning', code: 'HYPOXIA', label: 'Désaturation', detail: `SpO2: ${o2}%`, suggestion: 'Administrer O2, surveiller' });
+  }
+
+  return alerts;
+}
+
+// ----------------------------
+// SAVE VITALS
+// ----------------------------
+app.post("/vitals", (req, res) => {
+  const { patient_id, nurse_id, temperature, systolic, diastolic, pulse, spo2 } = req.body;
+
+  if (!patient_id) return res.status(400).json({ error: "patient_id requis" });
+
+  const sql = `
+    INSERT INTO vitals (patient_id, nurse_id, temperature, systolic, diastolic, pulse, spo2)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.run(sql, [patient_id, nurse_id, temperature, systolic, diastolic, pulse, spo2], function (err) {
+    if (err) {
+      console.error("Erreur SQL Vitals:", err.message);
+      return res.status(500).json({ error: "Erreur serveur" });
+    }
+    // Run clinical analysis
+    const alerts = analyzeVitals({ temperature, systolic, diastolic, pulse, spo2 });
+    res.json({ message: "Constantes enregistrées", id: this.lastID, alerts });
+  });
+});
+
+// ----------------------------
+// GET VITALS (History)
+// ----------------------------
+app.get("/vitals/patient/:id", (req, res) => {
+  const sql = `SELECT * FROM vitals WHERE patient_id = ? ORDER BY taken_at ASC`;
+  db.all(sql, [req.params.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: "Erreur serveur" });
+    res.json(rows);
+  });
+});
+
+// ----------------------------
 // Ajouter un log
 // ----------------------------
 app.post("/logs", (req, res) => {
@@ -347,6 +438,7 @@ app.get("/logs", (req, res) => {
 // =========================
 // Lancement serveur
 // =========================
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur API démarré : http://localhost:${PORT}`);
+  console.log(`📡 Accès réseau (Raspberry/Tablette) : http://10.10.20.22:${PORT}`);
 });
