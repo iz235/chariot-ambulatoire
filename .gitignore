@@ -1,6 +1,5 @@
 node_modules/
 .env
 .DS_Store
-chariot.db
 debug_admin.py
 *.log
